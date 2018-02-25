@@ -14,7 +14,7 @@ module.exports.start = function(req, res) {
   // Response data
   var data = {
     color: "#000000",
-    name: "I stole Slither",
+    name: "Thief Snake",
     head_url: "https://cdn1.iconfinder.com/data/icons/ahasoft-military-2/512/crime_mask-512.png",
     taunt: "Sneak sneak",
   };
@@ -237,7 +237,7 @@ function getSpaciousMoves(state, ourHead, pessimistic) {
 
 function moveResponse(res, move, turn) {
   console.log("Move = " + move);
-  taunt = turn % 8 ? "......" : "Sneaky";
+  taunt = turn % 8 ? "............." : "Sneak";
   return res.json({move, taunt});
 }
 
