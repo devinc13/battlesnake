@@ -43,6 +43,8 @@ module.exports.move = function(req, res) {
     results.push(result);
   }
 
+  let dangerousResults = results;
+
   // eliminate food paths that we can't fit into
   // compute space size pessimistically (avoid nodes next to enemy heads)
   results = results.filter((result) => {
@@ -79,8 +81,20 @@ module.exports.move = function(req, res) {
   // 'must eat' if steps to food consume >50% of health
   // 'should eat' if health < 20% or steps to food consume >25% of health
   // 'seek food' if food advantage is < 5
-  console.log("CLOSEST = " + closestFood);
   let canEat = results.length > 0;
+
+  // If we are super low on health, check for any dangerous food we can consider -
+  // the space size check isn't pessimistic
+  if (!canEat && ourSnake.health < 5) {
+    results = dangerousResults.filter((result) => {
+      if (result.path.length < 2) return false;
+      let spaceSize = getSpaceSize(state, result.path[1]);
+      return spaceSize > ourSnake.body.data.length;
+    });
+
+    canEat = results.length > 0;
+  }
+
   let mustEat = canEat && closestFood > (ourSnake.health * .5);
   let shouldEat = canEat && (ourSnake.health < 20 || closestFood > (ourSnake.health * .25));
   let seekFood = canEat && foodAdvantage && foodAdvantage.advantage < 5;
@@ -152,14 +166,11 @@ module.exports.move = function(req, res) {
   // first be pessimistic and avoid nodes next to enemy heads
   // if that fails, be optimistic and include nodes next to enemy heads
   let moves = getSpaciousMoves(state, ourHead, true);
-  console.log(moves);
   moves = moves.filter((result) => {
     return result.spaceSize > ourSnake.body.data.length;
   });
-  console.log(moves);
 
   moves = moves.length ? moves : getSpaciousMoves(state, ourHead);
-  console.log(moves);
   moves.sort((a, b) => {
     // avoid nodes bigger enemy snakes might move into
     if (a.spaceSize === b.spaceSize && a.isNextMove !== b.isNextMove) {
@@ -226,7 +237,7 @@ function getSpaciousMoves(state, ourHead, pessimistic) {
 }
 
 function moveResponse(res, move, turn) {
-  console.log(move);
+  console.log("Move = " + move);
   taunt = turn % 8 ? "......" : "Sneaky";
   return res.json({move, taunt});
 }
@@ -244,29 +255,6 @@ function getSpaceSize(state, node, pessimistic) {
   filled = [];
   floodFill(map, node.x, node.y, filled);
   return filled.length;
-
-
-  /*let validNodes = [node];
-  let seenNodes  = {};
-  seenNodes[getNodeHash(node)] = true;
-
-  for (let i = 0; i < validNodes.length; i++) {
-    // compute distance from current node to start node and subtract it from tails
-    let tailTrim = distance(node, validNodes[i]);
-
-    let neighbors = pessimistic
-      ? goodNeighbors(state, validNodes[i], false, tailTrim)
-      : validNeighbors(state, validNodes[i], tailTrim);
-
-    for (let j = 0; j < neighbors.length; j++) {
-      if (!seenNodes[getNodeHash(neighbors[j])]) {
-        seenNodes[getNodeHash(neighbors[j])] = true;
-        validNodes.push(neighbors[j]);
-      }
-    }
-  }*/
-
-  return validNodes.length;
 }
 
 function floodFill(map, x, y, filled) {
