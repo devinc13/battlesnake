@@ -79,6 +79,7 @@ module.exports.move = function(req, res) {
   // 'must eat' if steps to food consume >50% of health
   // 'should eat' if health < 20% or steps to food consume >25% of health
   // 'seek food' if food advantage is < 5
+  console.log("CLOSEST = " + closestFood);
   let canEat = results.length > 0;
   let mustEat = canEat && closestFood > (ourSnake.health * .5);
   let shouldEat = canEat && (ourSnake.health < 20 || closestFood > (ourSnake.health * .25));
@@ -151,11 +152,14 @@ module.exports.move = function(req, res) {
   // first be pessimistic and avoid nodes next to enemy heads
   // if that fails, be optimistic and include nodes next to enemy heads
   let moves = getSpaciousMoves(state, ourHead, true);
+  console.log(moves);
   moves = moves.filter((result) => {
     return result.spaceSize > ourSnake.body.data.length;
   });
+  console.log(moves);
 
   moves = moves.length ? moves : getSpaciousMoves(state, ourHead);
+  console.log(moves);
   moves.sort((a, b) => {
     // avoid nodes bigger enemy snakes might move into
     if (a.spaceSize === b.spaceSize && a.isNextMove !== b.isNextMove) {
@@ -236,7 +240,13 @@ function enemyDistance(state, node) {
 }
 
 function getSpaceSize(state, node, pessimistic) {
-  let validNodes = [node];
+  map = makeFloodMap(state, pessimistic);
+  filled = [];
+  floodFill(map, node.x, node.y, filled);
+  return filled.length;
+
+
+  /*let validNodes = [node];
   let seenNodes  = {};
   seenNodes[getNodeHash(node)] = true;
 
@@ -247,15 +257,75 @@ function getSpaceSize(state, node, pessimistic) {
     let neighbors = pessimistic
       ? goodNeighbors(state, validNodes[i], false, tailTrim)
       : validNeighbors(state, validNodes[i], tailTrim);
+
     for (let j = 0; j < neighbors.length; j++) {
       if (!seenNodes[getNodeHash(neighbors[j])]) {
         seenNodes[getNodeHash(neighbors[j])] = true;
         validNodes.push(neighbors[j]);
       }
     }
-  }
+  }*/
 
   return validNodes.length;
+}
+
+function floodFill(map, x, y, filled) {
+  if (map[y][x] == 0) {
+    // Mark as visited
+    map[y][x] = 1;
+    filled.push({'x': x, 'y': y});
+
+    // Check surrounding spots:
+    if (x > 0) {
+      floodFill(map, x - 1, y, filled)
+    }
+
+    if (x < map[y].length - 1){
+      floodFill(map, x + 1, y, filled)
+    }
+
+    if (y > 0) {
+      floodFill(map, x, y - 1, filled)
+    }
+
+    if (y < map.length - 1) {
+      floodFill(map, x, y + 1, filled)
+    }
+  }
+}
+
+function makeFloodMap(state,  pessimistic) {
+  let ourSnake
+  let map = [];
+
+  for (let x = 0; x < state.height; x++) {
+    row = [];
+    for (let y = 0; y < state.width; y++) {
+        row.push(0);
+    }
+
+    map.push(row);
+  }
+
+  let snakes = state.snakes.data;
+  for (let x = 0; x < snakes.length; x++) {
+    let snake = snakes[x];
+    // Cut off end of tail, since this will move on the next turn
+    for (let y = 0; y < snake.body.data.length - 1; y++) {
+      let coord = snake.body.data[y];
+      map[coord.y][coord.x] = 1;
+
+      // Fill in other spaces besides the snake heads if being pessimistic
+      if (pessimistic && y == 0 && snake.id != state.you.id) {
+        let neighbors = validNeighbors(state, {'x': coord.x, 'y': coord.y});
+        for (let j = 0; j < neighbors.length; j++) {
+          map[neighbors[j].y][neighbors[j].x] = 1;
+        }
+      }
+    }
+  }
+
+  return map;
 }
 
 function hasPathToTail(state, startNode, snake) {
