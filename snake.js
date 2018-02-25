@@ -13,10 +13,10 @@ module.exports.start = function(req, res) {
 
   // Response data
   var data = {
-    color: "#b2d8ff",
-    name: "Come Slither",
-    head_url: "http://www.placecage.com/c/200/200", // optional, but encouraged!
-    taunt: "START",
+    color: "#000000",
+    name: "I stole Slither",
+    head_url: "https://cdn1.iconfinder.com/data/icons/ahasoft-military-2/512/crime_mask-512.png",
+    taunt: "Sneak sneak",
   };
 
   return res.json(data);
@@ -37,7 +37,8 @@ module.exports.move = function(req, res) {
   // compute paths to food
   for (let i = 0; i < state.food.data.length; i++) {
     result = aStarSearch(state, ourHead, [state.food.data[i]]);
-    if (result.status != 'success') continue;
+    // Don't consider food that we can't reach without dying
+    if (result.status != 'success' || (result.path.length - 1) > ourSnake.health) continue;
     result.goal = 'FOOD';
     results.push(result);
   }
@@ -139,10 +140,11 @@ module.exports.move = function(req, res) {
       return a.cost - b.cost;
     });
     results.forEach(result => console.log(result.goal, result.cost));
+    console.log("Goal = " + results[0].goal);
     return moveResponse(
       res,
       direction(ourHead, results[0].path[1]),
-      'A* BEST PATH TO ' + results[0].goal
+      state.turn
     );
   }
 
@@ -168,12 +170,12 @@ module.exports.move = function(req, res) {
     return moveResponse(
       res,
       direction(ourHead, moves[0].node),
-      'NO PATH TO GOAL, LARGEST SPACE'
+      state.turn
     );
   }
 
   // no valid moves
-  return moveResponse(res, 'up', 'FML');
+  return moveResponse(res, 'up', 'Uh oh...');
 }
 
 function getSpaciousMoves(state, ourHead, pessimistic) {
@@ -195,9 +197,9 @@ function getSpaciousMoves(state, ourHead, pessimistic) {
   return moves;
 }
 
-function moveResponse(res, move, taunt) {
-  taunt = taunt + ' ' + move;
-  console.log(taunt);
+function moveResponse(res, move, turn) {
+  console.log(move);
+  taunt = turn % 8 ? "..." : "Sneaky";
   return res.json({move, taunt});
 }
 
