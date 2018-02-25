@@ -85,7 +85,7 @@ module.exports.move = function(req, res) {
 
   // If we are super low on health, check for any dangerous food we can consider -
   // the space size check isn't pessimistic
-  if (!canEat && ourSnake.health < 5) {
+  if (!canEat && ourSnake.health < 4) {
     results = dangerousResults.filter((result) => {
       if (result.path.length < 2) return false;
       let spaceSize = getSpaceSize(state, result.path[1]);
