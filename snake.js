@@ -152,6 +152,10 @@ module.exports.move = function(req, res) {
   // first be pessimistic and avoid nodes next to enemy heads
   // if that fails, be optimistic and include nodes next to enemy heads
   let moves = getSpaciousMoves(state, ourHead, true);
+  moves = moves.filter((result) => {
+    return result.spaceSize > ourSnake.body.data.length;
+  });
+
   moves = moves.length ? moves : getSpaciousMoves(state, ourHead);
   moves.sort((a, b) => {
     // avoid nodes bigger enemy snakes might move into
@@ -166,6 +170,7 @@ module.exports.move = function(req, res) {
 
     return b.spaceSize - a.spaceSize;
   });
+
   if (moves.length) {
     return moveResponse(
       res,
@@ -199,7 +204,7 @@ function getSpaciousMoves(state, ourHead, pessimistic) {
 
 function moveResponse(res, move, turn) {
   console.log(move);
-  taunt = turn % 8 ? "..." : "Sneaky";
+  taunt = turn % 8 ? "......" : "Sneaky";
   return res.json({move, taunt});
 }
 
