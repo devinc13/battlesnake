@@ -134,18 +134,17 @@ module.exports.move = function(req, res) {
     }
   }
 
+  results = filterDangerousResults(state, results, ourSnake);
+
   // if we found paths to goals, pick cheapest one
   if (results.length) {
     results.sort((a, b) => {
       return a.cost - b.cost;
     });
+
     results.forEach(result => console.log(result.goal, result.cost));
     console.log("Goal = " + results[0].goal);
-    return moveResponse(
-      res,
-      direction(ourHead, results[0].path[1]),
-      state.turn
-    );
+    return moveResponse(res, direction(ourHead, results[0].path[1]), state.turn);
   }
 
   // no best moves, pick the direction that has the most open space
@@ -171,16 +170,36 @@ module.exports.move = function(req, res) {
     return b.spaceSize - a.spaceSize;
   });
 
+  console.log("Making a safe move");
   if (moves.length) {
-    return moveResponse(
-      res,
-      direction(ourHead, moves[0].node),
-      state.turn
-    );
+    return moveResponse(res, direction(ourHead, moves[0].node), state.turn);
   }
 
+  console.log("No valid moves");
   // no valid moves
-  return moveResponse(res, 'up', 'Uh oh...');
+  return moveResponse(res, 'up', state.turn);
+}
+
+function filterDangerousResults(state, results, ourSnake) {
+  if (!results.length) {
+    return [];
+  }
+
+  pessimisticSafeResults = results.filter((result) => {
+    // Check size of area from the first move of this path - start with pessimistic
+    return getSpaceSize(state, results[0].path[1], true) > ourSnake.body.data.length;
+  });
+
+  if (pessimisticSafeResults.length) {
+    return pessimisticSafeResults;
+  }
+
+  // If we didn't find any pessimistic safe results, get optimistic safe results
+  optimisticSafeResults = results.filter((result) => {
+    return getSpaceSize(state, results[0].path[1]) > ourSnake.body.data.length;
+  });
+
+  return optimisticSafeResults;
 }
 
 function getSpaciousMoves(state, ourHead, pessimistic) {
