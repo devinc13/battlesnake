@@ -96,7 +96,7 @@ module.exports.move = function(req, res) {
   }
 
   let mustEat = canEat && closestFood > (ourSnake.health * .5);
-  let shouldEat = canEat && (ourSnake.health < 20 || closestFood > (ourSnake.health * .25));
+  let shouldEat = canEat && (ourSnake.health < 25 || closestFood > (ourSnake.health * .25));
   let seekFood = canEat && foodAdvantage && foodAdvantage.advantage < 5;
   console.log('SHOULD/MUST/SEEK', shouldEat, mustEat, seekFood);
 
