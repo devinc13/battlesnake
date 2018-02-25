@@ -150,7 +150,6 @@ module.exports.move = function(req, res) {
   }
 
   results = filterDangerousResults(state, results, ourSnake);
-
   // if we found paths to goals, pick cheapest one
   if (results.length) {
     results.sort((a, b) => {
@@ -201,17 +200,17 @@ function filterDangerousResults(state, results, ourSnake) {
   }
 
   pessimisticSafeResults = results.filter((result) => {
-    // Check size of area from the first move of this path - start with pessimistic
-    return getSpaceSize(state, results[0].path[1], true) > ourSnake.body.data.length;
+    // Check size of area from the first move of this path - start with pessimistic - don't filter tail
+    return (getSpaceSize(state, results[0].path[1], true) > ourSnake.body.data.length) || (result.goal == 'TAIL');
   });
 
   if (pessimisticSafeResults.length) {
     return pessimisticSafeResults;
   }
 
-  // If we didn't find any pessimistic safe results, get optimistic safe results
+  // If we didn't find any pessimistic safe results, get optimistic safe results - don't filter tail
   optimisticSafeResults = results.filter((result) => {
-    return getSpaceSize(state, results[0].path[1]) > ourSnake.body.data.length;
+    return (getSpaceSize(state, results[0].path[1]) > ourSnake.body.data.length) || (result.goal == 'TAIL');
   });
 
   return optimisticSafeResults;
@@ -283,7 +282,6 @@ function floodFill(map, x, y, filled) {
 }
 
 function makeFloodMap(state,  pessimistic) {
-  let ourSnake
   let map = [];
 
   for (let x = 0; x < state.height; x++) {
@@ -295,9 +293,7 @@ function makeFloodMap(state,  pessimistic) {
     map.push(row);
   }
 
-  let snakes = state.snakes.data;
-  for (let x = 0; x < snakes.length; x++) {
-    let snake = snakes[x];
+  for (let snake of state.snakes.data) {
     // Cut off end of tail, since this will move on the next turn
     for (let y = 0; y < snake.body.data.length - 1; y++) {
       let coord = snake.body.data[y];
