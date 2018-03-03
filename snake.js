@@ -95,8 +95,13 @@ module.exports.move = function(req, res) {
     canEat = results.length > 0;
   }
 
-  let mustEat = canEat && closestFood > (ourSnake.health * .5);
-  let shouldEat = canEat && (ourSnake.health < 25 || closestFood > (ourSnake.health * .25));
+  let isEarlyInGame = state.turn < 250;
+  let shouldEatThreshold = isEarlyInGame ? 50 : 25;
+  let mustEatThreshold = isEarlyInGame ? (ourSnake.health * .2) : (ourSnake.health * .5);
+  let earlyMustEat = isEarlyInGame && ourSnake.health < 50;
+
+  let mustEat = canEat && (closestFood > mustEatThreshold || earlyMustEat);
+  let shouldEat = canEat && (ourSnake.health < shouldEatThreshold || closestFood > (ourSnake.health * .25));
   let seekFood = canEat && foodAdvantage && foodAdvantage.advantage < 5;
   console.log('SHOULD/MUST/SEEK', shouldEat, mustEat, seekFood);
 
