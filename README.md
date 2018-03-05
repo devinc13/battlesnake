@@ -9,6 +9,6 @@ npm install
 node .
 ```
 
-## STOLEN SNAKE
+## Theif Snake
 
-Slightly modified version of @stewartlord's snake. I helped with some brainstorming and testing, and at the last minute stole the snake and made some tweaks.
+Modified version of @stewartlord's snake. After creating a testing framework and writing a bunch of edge case tests, I took Slither and made a bunch of changes to make it pass the tests. The name comes from the fact that the base snake was "stolen" code.
